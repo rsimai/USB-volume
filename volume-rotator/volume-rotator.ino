@@ -12,7 +12,8 @@
 RotaryEncoder encoder(PIN_IN1, PIN_IN2, RotaryEncoder::LatchMode::TWO03);
 
 int dir;
-int buttonState = 0;
+int pos=0;
+int newPos=0;
 
 void setup()
 {
@@ -23,12 +24,16 @@ void setup()
 
 void loop()
 {
-  static int pos = 0;
+  if ( digitalRead(PIN_SW) == LOW){      // button pressed?
+    Consumer.write(MEDIA_VOL_MUTE);
+    pos = newPos;                        // workaround to resync the ticks
+    while ( digitalRead(PIN_SW) == LOW){ // block to not permanently toggle
+      delay(100);
+    }
+  }
   encoder.tick();
-  int newPos = encoder.getPosition();
-  buttonState = digitalRead(PIN_SW);
-  
-  if ((pos - newPos >= 2) || (newPos - pos >=2)) { // does 2 ticks between positions 
+  newPos = encoder.getPosition();
+  if ((pos - newPos >= 2) || (newPos - pos >=2)) { // encoder does 2 ticks between positions 
     dir = (int)(encoder.getDirection());
     pos = newPos;
     if (dir == 1){                       // turned right
@@ -36,12 +41,6 @@ void loop()
     }
     if (dir == -1){                      // turned left
       Consumer.write(MEDIA_VOL_DOWN);
-    }
-  }
-  if ( digitalRead(PIN_SW) == LOW){      // button pressed?
-    Consumer.write(MEDIA_VOL_MUTE);
-    while ( digitalRead(PIN_SW) == LOW){ // block
-      delay(100);
     }
   }
 } 
